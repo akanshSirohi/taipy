@@ -155,7 +155,7 @@ const Selector = (props: SelTreeProps) => {
 
     const isRadio = mode && mode.toLocaleLowerCase() == "radio";
     const isCheck = mode && mode.toLocaleLowerCase() == "check";
-    const dropdown = isRadio || isCheck || props.dropdown === undefined ? false : props.dropdown;
+    const dropdown = isRadio || isCheck ? props.dropdown !== undefined ? props.dropdown : true : props.dropdown;
     const multiple = isCheck ? true : isRadio || props.multiple === undefined ? false : props.multiple;
 
     const lovList = useLovListMemo(lov, defaultLov);
@@ -324,7 +324,7 @@ const Selector = (props: SelTreeProps) => {
 
     return (
         <>
-            {isRadio || isCheck ? (
+            {isRadio || (isCheck && !dropdown) ? (
                 <FormControl sx={controlSx} className={`${className} ${getComponentClassName(props.children)}`}>
                     {props.label ? <FormLabel>{props.label}</FormLabel> : null}
                     <Tooltip title={hover || ""}>
@@ -409,41 +409,49 @@ const Selector = (props: SelTreeProps) => {
                                 input={<OutlinedInput label={props.label} />}
                                 disabled={!active}
                                 renderValue={(selected) => (
-                                    <Box sx={renderBoxSx}>
-                                        {lovList
-                                            .filter((it) =>
-                                                Array.isArray(selected) ? selected.includes(it.id) : selected === it.id
-                                            )
-                                            .map((item, idx) => {
-                                                if (multiple) {
-                                                    const chipProps = {} as Record<string, unknown>;
-                                                    if (typeof item.item === "string") {
-                                                        chipProps.label = item.item;
+                                    !isCheck ? (
+                                        <Box sx={renderBoxSx}>
+                                            {lovList
+                                                .filter((it) =>
+                                                    Array.isArray(selected) ? selected.includes(it.id) : selected === it.id
+                                                )
+                                                .map((item, idx) => {
+                                                    if (multiple) {
+                                                        const chipProps = {} as Record<string, unknown>;
+                                                        if (typeof item.item === "string") {
+                                                            chipProps.label = item.item;
+                                                        } else {
+                                                            chipProps.label = item.item.text || "";
+                                                            chipProps.avatar = <Avatar src={item.item.path} />;
+                                                        }
+                                                        return (
+                                                            <Chip
+                                                                key={item.id}
+                                                                {...chipProps}
+                                                                onDelete={handleDelete}
+                                                                data-id={item.id}
+                                                                onMouseDown={doNotPropagateEvent}
+                                                                disabled={!active}
+                                                            />
+                                                        );
+                                                    } else if (idx === 0) {
+                                                        return typeof item.item === "string" ? (
+                                                            item.item
+                                                        ) : (
+                                                            <LovImage item={item.item} />
+                                                        );
                                                     } else {
-                                                        chipProps.label = item.item.text || "";
-                                                        chipProps.avatar = <Avatar src={item.item.path} />;
+                                                        return null;
                                                     }
-                                                    return (
-                                                        <Chip
-                                                            key={item.id}
-                                                            {...chipProps}
-                                                            onDelete={handleDelete}
-                                                            data-id={item.id}
-                                                            onMouseDown={doNotPropagateEvent}
-                                                            disabled={!active}
-                                                        />
-                                                    );
-                                                } else if (idx === 0) {
-                                                    return typeof item.item === "string" ? (
-                                                        item.item
-                                                    ) : (
-                                                        <LovImage item={item.item} />
-                                                    );
-                                                } else {
-                                                    return null;
-                                                }
-                                            })}
-                                    </Box>
+                                                })}
+                                        </Box>
+                                    ) : (
+                                        <Box sx={renderBoxSx}>
+                                            {
+                                                (Array.isArray(selected) ? `${selected.length} item${selected.length > 1 ? 's' : ''} selected` : '')
+                                            }
+                                        </Box>
+                                    )
                                 )}
                                 MenuProps={getMenuProps(height)}
                             >
